@@ -1,9 +1,6 @@
 from datetime import timedelta
-class Period(object):
-    @property
-    def code(self):
-        return self._code
 
+class Period(object):
     @staticmethod
     def generate(code):
         return globals()[code]()
@@ -13,6 +10,12 @@ class Period(object):
 
     def __str__(self):
         return self.code
+
+    # -------------------------------- properties -------------------
+
+    @property
+    def code(self):
+        return self._code
 
 class S5(Period):
     def __init__(self):

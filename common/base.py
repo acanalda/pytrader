@@ -5,6 +5,7 @@ import string
 from pymongo import MongoClient
 from datetime import datetime
 import settings
+from brokers.oanda import Oanda
 
 class Engine(object):
 
@@ -22,11 +23,18 @@ class Engine(object):
         self._start_date = start_date
         self._end_date = end_date
 
-    def initAccount(self, usr, pwd, acc_id, name, balance, leverage, currency):
-        self._account = Account(usr, pwd)
+    def initAccount(self, broker_name, usr, pwd, acc_id, acc_name, balance, leverage, currency):
+        # Create the broker service
+        if broker_name == 'oanda':
+            broker = Oanda(usr, pwd)
+        else:
+            raise NotImplementedError('Broker interface not implemented')
+
+        # Create the account manager
+        self._account = Account(broker)
         self.account.updateAccountData({
             "accountId" : acc_id,
-            "accountName" : name,
+            "accountName" : acc_name,
             "balance" : balance,
             "marginRate" : 1 / leverage,
             "accountCurrency" : currency
@@ -66,7 +74,7 @@ class Engine(object):
         if len(db_candles) > 0:
             self._start_date = db_candles[-1]['time'] + self.period.toTimeDelta()
 
-        candles = instrument.getBrokerCandles(self.start_date, self.end_date)
+        candles = self.account.broker.getCandles(instrument, self.start_date, self.end_date, self.period)
         self.logger.info('%s: %i new candles received from the broker' % (instrument.code, len(candles)))
 
         # Insert new candles to db
@@ -214,9 +222,8 @@ class Engine(object):
 """ ------------------- ACCOUNT ------------------- """
 class Account(object):
 
-    def __init__(self, usr, pwd):
-        self._usr = usr
-        self._pwd = pwd
+    def __init__(self, broker):
+        self._broker = broker
         self._orders = {}
         self._inital_balance = None
 
@@ -273,6 +280,10 @@ class Account(object):
         return len(self.orders.keys())
 
     # -------------------------------- properties -------------------
+
+    @property
+    def broker(self):
+        return self._broker
 
     @property
     def account_id(self):

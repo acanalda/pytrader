@@ -1,8 +1,4 @@
-import json
-import urllib2
-import urllib
-from common.libs.rfc3339 import rfc3339
-import settings
+from common.currencies import EUR, USD, CAD, JPY, GBP, AUD, CHF
 
 class Instrument(object):
     def __init__(self, primary_ccy, secondary_ccy, pip_value, pip_scale):
@@ -13,33 +9,6 @@ class Instrument(object):
         self._secondary_ccy = secondary_ccy
         self._pip_value = pip_value
         self._pip_scale = pip_scale
-
-    def getBrokerCandles(self, start_date, end_date):
-        url = settings.BASE_URL + '/candles'
-        start_rfc = rfc3339(start_date, utc = True, use_system_timezone = False)
-        end_rfc = rfc3339(end_date, utc = True, use_system_timezone = False)
-        values = {
-          'instrument': self.code,
-          'granularity': self.period.code,
-          'candleFormat': settings.CANDLE_FORMAT,
-          'start': start_rfc,
-          'end': end_rfc,
-          'includeFirst': 'true'
-        }
-        url_values = urllib.urlencode(values)
-        complete_url = '%s?%s' % (url, url_values)
-        req = urllib2.Request(complete_url)
-        try:
-            response = urllib2.urlopen(req)
-            json_str = response.read()
-        except:
-            json_str = '{"candles": []}'
-            pass
-
-        if json_str:
-            json_obj = json.loads(json_str)
-            return json_obj['candles']
-        return[]
 
     def loadCandles(self, candles):
         for candle in candles:
@@ -140,41 +109,6 @@ class CADJPY(Instrument):
 """ CHF """
 class CHFJPY(Instrument):
     def __init__(self): super(CHFJPY, self).__init__(CHF(), JPY(), 0.01, 2)
-
-
-""" ------------------- CURRENCY ------------------- """
-class Currency(object):
-    @property
-    def code(self):
-        return self._code
-
-class EUR(Currency):
-    def __init__(self):
-        self._code = 'EUR'
-
-class USD(Currency):
-    def __init__(self):
-        self._code = 'USD'
-
-class JPY(Currency):
-    def __init__(self):
-        self._code = 'JPY'
-
-class AUD(Currency):
-    def __init__(self):
-        self._code = 'AUD'
-
-class CAD(Currency):
-    def __init__(self):
-        self._code = 'CAD'
-
-class CHF(Currency):
-    def __init__(self):
-        self._code = 'CHF'
-
-class GBP(Currency):
-    def __init__(self):
-        self._code = 'GBP'
 
 """ ------------------- BAR ------------------- """
 class Bar(object):

@@ -1,20 +1,19 @@
-from common.base import Engine
-from common import periods
+import logging
 from datetime import datetime
+from common.base import Engine
 from common.instruments import EURGBP, EURAUD, EURUSD, EURCAD, EURCHF, EURJPY, GBPUSD, GBPJPY, GBPCAD, GBPCHF, GBPAUD,\
     AUDUSD, AUDCHF, AUDCAD, AUDJPY, USDCAD, USDCHF, USDJPY, CADJPY, CADCHF, CHFJPY
-import logging
-from strategies.basicEma import BasicEma
 from common.instruments import EUR
+from common import periods
+from strategies.basicEma import BasicEma
+import settings
 
 BACKTEST = True
-ACCOUNT_USR = ''
-ACCOUNT_PWD = ''
-ACCOUNT_BALANCE = 10000
-ACCOUNT_LEVERAGE = 20.0
-ACCOUNT_CURRENCY = EUR()
 BEGIN_DATE = datetime(2014, 3, 1, 0, 0)
 END_DATE = datetime.utcnow()
+LEVERAGE = 20.0
+PERIOD = periods.H1()
+STRATEGY = BasicEma()
 
 def main():
     logging.basicConfig(format = '%(levelname)s %(name)s %(asctime)s %(message)s', level = logging.DEBUG)
@@ -24,19 +23,25 @@ def main():
     #    loadMaxPrecissionData(datetime(2014, 7, 21, 0, 0), END_DATE)
 
     # Create the engine
-    engine = Engine(periods.H1(), BEGIN_DATE, END_DATE)
-    strategy = BasicEma()
+    engine = Engine(PERIOD, BEGIN_DATE, END_DATE)
 
     # Setup engine
-    engine.initAccount(ACCOUNT_USR, ACCOUNT_PWD, 1, 'paper', ACCOUNT_BALANCE,
-                       ACCOUNT_LEVERAGE, ACCOUNT_CURRENCY)
+    engine.initAccount(
+                       broker_name = 'oanda',
+                       usr = settings.BROKER_USR,
+                       pwd = settings.BROKER_PWD,
+                       acc_id = 1,
+                       acc_name = 'paper',
+                       balance = 10000,
+                       leverage = LEVERAGE,
+                       currency = EUR()
+                       )
 
     # Register all the instruments used by the system
     registerInstruments(engine)
 
     engine.loadData()
-
-    engine.runStrategy(strategy = strategy, backtest = BACKTEST)
+    engine.runStrategy(strategy = STRATEGY, backtest = BACKTEST)
     engine.printResults()
 
 def registerInstruments(engine):
